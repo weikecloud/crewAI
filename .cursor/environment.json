@@ -1,0 +1,4 @@
+{
+  "install": "bash .cursor/install.sh",
+  "start": "echo 'Cloud Agent environment ready'"
+}
