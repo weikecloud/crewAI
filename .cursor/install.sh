@@ -7,8 +7,10 @@ TS_WORKSPACE="/workspace/typescript"
 LOCKFILE_PATH="${TS_WORKSPACE}/pnpm-lock.yaml"
 CACHE_DIR="${HOME}/.cache/cursor-cloud-agent"
 CACHE_KEY_FILE="${CACHE_DIR}/typescript-prewarm.key"
-SETUP_SCHEMA_VERSION="2"
+SETUP_SCHEMA_VERSION="3"
 FORCE_CLOUD_SETUP="${FORCE_CLOUD_SETUP:-0}"
+RUN_SMOKE_ON_CACHE_HIT="${RUN_SMOKE_ON_CACHE_HIT:-1}"
+SMOKE_CHECK_COMMAND="${SMOKE_CHECK_COMMAND:-pnpm exec tsc -p tsconfig.json --noEmit --pretty false}"
 
 mkdir -p "${CACHE_DIR}"
 
@@ -61,7 +63,14 @@ if [[ -f "${TS_WORKSPACE}/package.json" ]]; then
   fi
 
   if [[ "${FORCE_CLOUD_SETUP}" != "1" && "${CURRENT_CACHE_KEY}" == "${EXISTING_CACHE_KEY}" ]]; then
-    echo "[cloud-agent] TypeScript workspace unchanged; skipping prewarm and validation"
+    echo "[cloud-agent] TypeScript workspace unchanged; skipping install/test/build"
+    if [[ "${RUN_SMOKE_ON_CACHE_HIT}" == "1" ]]; then
+      echo "[cloud-agent] Running lightweight smoke check on cache hit"
+      cd "${TS_WORKSPACE}"
+      eval "${SMOKE_CHECK_COMMAND}"
+    else
+      echo "[cloud-agent] Smoke check disabled (RUN_SMOKE_ON_CACHE_HIT=${RUN_SMOKE_ON_CACHE_HIT})"
+    fi
     echo "[cloud-agent] Set FORCE_CLOUD_SETUP=1 to force a full setup run"
     echo "[cloud-agent] Environment setup completed"
     exit 0
